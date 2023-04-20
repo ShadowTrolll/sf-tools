@@ -551,6 +551,64 @@ Site.ready({ type: 'simulator' }, function (urlParams) {
         }
     });
 
+    const statMap = ["Strength", "Dexterity", "Intelligence", "Constitution", "Luck"];
+
+    function SimOptimize(playerInstance, bossInstance, iterations, instances, investArray, stepSize, remainingSteps) {
+        const batch = new WorkerBatch('dungeons');
+        const results = [];
+
+        for (let statIdx = 0; statIdx < statMap.length; statIdx++) {
+            let adjustedPlayer = JSON.parse(JSON.stringify(playerInstance));
+            adjustedPlayer[0][statMap[statIdx]].Total += stepSize;
+
+            batch.add(
+                ({ results: _results }) => {
+                    results[statIdx] = _results;
+                },
+                {
+                    players: adjustedPlayer,
+                    boss: bossInstance,
+                    iterations,
+                    hpcap: 500,
+                    config: SimulatorUtils.config
+                }
+            )
+        }
+
+        batch.run(instances).then(() => {
+            console.log("Results:",results);
+            console.log("Max val:", Math.max(...results.map(o => o.score)));
+            let bestIdx = results.map(o => o.score).indexOf(Math.max(...results.map(o => o.score)));
+            console.log("Best stat improvement:", statMap[bestIdx]);
+            let adjustedPlayer = JSON.parse(JSON.stringify(playerInstance));
+            adjustedPlayer[0][statMap[bestIdx]].Total += stepSize;
+            investArray.push(statMap[bestIdx]);
+            if (remainingSteps > 0) SimOptimize(adjustedPlayer, bossInstance, iterations, instances, investArray, stepSize, remainingSteps-1);
+            else console.log("Final invest array (each", stepSize ,")", investArray);
+        })
+    }
+
+    $('#sim-run-optimize').click(function () {
+        console.log("Requested optimization simulation");
+        const instances = Math.max(1, Number($('#sim-threads').val()) || 4);
+        const iterations = Math.max(1, Number($('#sim-iterations').val()) || 5000);
+        const stepSize = 50;
+        const statTotal = 300;      
+
+        const statStepCount = statTotal/stepSize;
+        
+        if (boss && editor.valid()) {
+            const bossInstance = getBossData(boss, dungeon);
+            let playerInstances = preparePlayerInstances(dungeon);
+
+            console.log("Player:", playerInstances)
+            console.log("Boss:", bossInstance)            
+
+            let investArray = [];
+            SimOptimize(playerInstances, bossInstance, iterations, instances, investArray, stepSize, statStepCount - 1);
+        }
+    });
+
     const NEXT_DUNGEONS = {
         13: 30,
         113: 130,

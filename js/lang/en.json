@@ -1065,6 +1065,7 @@
     "dungeons": {
         "simulate_one": "Simulate",
         "simulate_remaining": "Remaining",
+		"simulate_optimize": "Optimize",
         "simulate_all": "All",
         "simulate_next": "More",
         "player": "Player",

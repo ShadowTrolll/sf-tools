@@ -1065,6 +1065,7 @@
     "dungeons": {
         "simulate_one": "Simulovat",
         "simulate_remaining": "Zbývající",
+		"simulate_optimize": "Optimalizovat",
         "simulate_all": "Všechny",
         "simulate_next": "Více",
         "player": "Hráč",
